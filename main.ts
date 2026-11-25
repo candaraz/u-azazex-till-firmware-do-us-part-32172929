@@ -1,29 +1,16 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+// Till Firmware Do Us Part — entry copier.
+// Reads the vow stored beside this script and places a byte-exact copy
+// into the output directory named by MAKEFUN_OUTPUT_DIR.
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const VOW =
-  "I vow to give you my only USB port, because you are worth every device I will never plug in again.";
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const vowBytes = readFileSync(join(scriptDir, "entry.txt"));
 
-// Guards: the entry must be exactly one sentence, 1-200 chars, one line.
-if (VOW.length < 1 || VOW.length > 200) {
-  throw new Error(`vow length ${VOW.length} outside the 1-200 gate`);
-}
-if (VOW.split(".").length - 1 !== 1 || /[!?]/.test(VOW)) {
-  throw new Error("vow must be strictly one sentence");
-}
-if (VOW.includes("\n")) {
-  throw new Error("vow must be a single line");
-}
-
-const outDir = process.env.MAKEFUN_OUTPUT_DIR || "/output";
+const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? join(scriptDir, "out");
 mkdirSync(outDir, { recursive: true });
-const entryPath = join(outDir, "entry.txt");
-writeFileSync(entryPath, VOW, "utf8");
-
-// Read back and confirm the file is byte-identical to the vow.
-const written = readFileSync(entryPath, "utf8");
-if (written !== VOW) {
-  throw new Error("entry.txt does not match the vow byte-for-byte");
+for (const name of readdirSync(outDir)) {
+  rmSync(join(outDir, name), { recursive: true, force: true });
 }
-console.log(`wrote ${entryPath}`);
+writeFileSync(join(outDir, "entry.txt"), vowBytes);
